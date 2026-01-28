@@ -77,6 +77,143 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
+        // ============ SISTEMA DE SONIDO 8-BIT ============
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        // Sonido de disparo del jugador (pew!)
+        function playShootSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.1);
+
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        // Sonido de explosion de alien
+        function playExplosionSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.2);
+
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.2);
+        }
+
+        // Sonido de disparo alien
+        function playAlienShootSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        // Sonido de daño al jugador
+        function playPlayerHitSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.type = 'square';
+            osc2.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc2.frequency.setValueAtTime(155, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.4);
+            osc2.frequency.exponentialRampToValueAtTime(35, audioCtx.currentTime + 0.4);
+
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+            osc.start(audioCtx.currentTime);
+            osc2.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.4);
+            osc2.stop(audioCtx.currentTime + 0.4);
+        }
+
+        // Sonido de Game Over
+        function playGameOverSound() {
+            if (!audioCtx) return;
+            const notes = [392, 330, 262, 196];
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.2);
+
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime + i * 0.2);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.2 + 0.2);
+
+                osc.start(audioCtx.currentTime + i * 0.2);
+                osc.stop(audioCtx.currentTime + i * 0.2 + 0.2);
+            });
+        }
+
+        // Sonido de subir nivel
+        function playLevelUpSound() {
+            if (!audioCtx) return;
+            const notes = [523, 659, 784, 1047];
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime + i * 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.15);
+
+                osc.start(audioCtx.currentTime + i * 0.1);
+                osc.stop(audioCtx.currentTime + i * 0.1 + 0.15);
+            });
+        }
+
+        // ============ FIN SISTEMA DE SONIDO ============
+
         // Configuracion del juego
         const PIXEL_SIZE = 4;
         let score = 0;
@@ -335,6 +472,7 @@
                     // Game over si llegan abajo
                     if (alien.y + alien.height >= player.y) {
                         gameOver = true;
+                        playGameOverSound();
                     }
                 }
             });
@@ -349,6 +487,7 @@
                     x: shooter.x + shooter.width / 2,
                     y: shooter.y + shooter.height
                 });
+                playAlienShootSound();
             }
         }
 
@@ -366,6 +505,7 @@
                         bullets.splice(bIndex, 1);
                         score += alien.points;
                         createExplosion(alien.x, alien.y, alien.color);
+                        playExplosionSound();
                     }
                 });
             });
@@ -379,8 +519,10 @@
                     alienBullets.splice(bIndex, 1);
                     lives--;
                     createExplosion(player.x, player.y, COLORS.green);
+                    playPlayerHitSound();
                     if (lives <= 0) {
                         gameOver = true;
+                        playGameOverSound();
                     }
                 }
             });
@@ -390,6 +532,7 @@
                 level++;
                 alienSpeed += 0.5;
                 initAliens();
+                playLevelUpSound();
             }
         }
 
@@ -480,11 +623,13 @@
                 player.dx = player.speed;
             }
             if (e.key === ' ' && !gameOver) {
+                initAudio();
                 if (bullets.length < 3) {
                     bullets.push({
                         x: player.x + player.width / 2 - 2,
                         y: player.y
                     });
+                    playShootSound();
                 }
             }
             if ((e.key === 'r' || e.key === 'R') && gameOver) {
