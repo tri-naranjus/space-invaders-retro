@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INVASORES ESPACIALES - 1984</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        .game-container {
+            text-align: center;
+        }
+        h1 {
+            color: #0f0;
+            text-shadow: 0 0 10px #0f0, 0 0 20px #0f0;
+            margin-bottom: 10px;
+            font-size: 28px;
+            letter-spacing: 4px;
+            animation: flicker 1.5s infinite alternate;
+        }
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        canvas {
+            border: 4px solid #0f0;
+            box-shadow: 0 0 20px #0f0, inset 0 0 20px rgba(0,255,0,0.1);
+            image-rendering: pixelated;
+        }
+        .info {
+            color: #0f0;
+            margin-top: 15px;
+            font-size: 14px;
+            text-shadow: 0 0 5px #0f0;
+        }
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+    <div class="game-container">
+        <h1>INVASORES ESPACIALES</h1>
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
+        <div class="info">
+            [A/D o FLECHAS] Mover | [ESPACIO] Disparar | [R] Reiniciar
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Configuracion del juego
+        const PIXEL_SIZE = 4;
+        let score = 0;
+        let lives = 3;
+        let gameOver = false;
+        let gameWon = false;
+        let level = 1;
+
+        // Colores retro
+        const COLORS = {
+            green: '#00ff00',
+            cyan: '#00ffff',
+            magenta: '#ff00ff',
+            yellow: '#ffff00',
+            red: '#ff0000',
+            white: '#ffffff',
+            orange: '#ff8800'
+        };
+
+        // Nave del jugador
+        const player = {
+            x: canvas.width / 2 - 20,
+            y: canvas.height - 60,
+            width: 40,
+            height: 30,
+            speed: 6,
+            dx: 0
+        };
+
+        // Balas
+        let bullets = [];
+        let alienBullets = [];
+
+        // Aliens
+        let aliens = [];
+        let alienDirection = 1;
+        let alienSpeed = 1;
+        let alienDropAmount = 20;
+
+        // Sprites en pixel art (matrices)
+        const ALIEN_SPRITE_1 = [
+            [0,0,1,0,0,0,0,0,1,0,0],
+            [0,0,0,1,0,0,0,1,0,0,0],
+            [0,0,1,1,1,1,1,1,1,0,0],
+            [0,1,1,0,1,1,1,0,1,1,0],
+            [1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,1,1,1,1,1,1,1,0,1],
+            [1,0,1,0,0,0,0,0,1,0,1],
+            [0,0,0,1,1,0,1,1,0,0,0]
+        ];
+
+        const ALIEN_SPRITE_2 = [
+            [0,0,0,1,1,0,0,0],
+            [0,0,1,1,1,1,0,0],
+            [0,1,1,1,1,1,1,0],
+            [1,1,0,1,1,0,1,1],
+            [1,1,1,1,1,1,1,1],
+            [0,0,1,0,0,1,0,0],
+            [0,1,0,1,1,0,1,0],
+            [1,0,1,0,0,1,0,1]
+        ];
+
+        const ALIEN_SPRITE_3 = [
+            [0,0,0,0,1,1,1,1,0,0,0,0],
+            [0,1,1,1,1,1,1,1,1,1,1,0],
+            [1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,1,1,0,0,1,1,0,0,1,1,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1],
+            [0,0,0,1,1,0,0,1,1,0,0,0],
+            [0,0,1,1,0,1,1,0,1,1,0,0],
+            [1,1,0,0,0,0,0,0,0,0,1,1]
+        ];
+
+        const PLAYER_SPRITE = [
+            [0,0,0,0,0,1,0,0,0,0,0],
+            [0,0,0,0,1,1,1,0,0,0,0],
+            [0,0,0,0,1,1,1,0,0,0,0],
+            [0,1,1,1,1,1,1,1,1,1,0],
+            [1,1,1,1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        // Funcion para dibujar sprites
+        function drawSprite(sprite, x, y, color, scale = PIXEL_SIZE) {
+            ctx.fillStyle = color;
+            for (let row = 0; row < sprite.length; row++) {
+                for (let col = 0; col < sprite[row].length; col++) {
+                    if (sprite[row][col]) {
+                        ctx.fillRect(
+                            x + col * scale,
+                            y + row * scale,
+                            scale - 1,
+                            scale - 1
+                        );
+                    }
+                }
+            }
+        }
+
+        // Inicializar aliens
+        function initAliens() {
+            aliens = [];
+            const rows = 5;
+            const cols = 11;
+            const startX = 50;
+            const startY = 60;
+            const spacingX = 50;
+            const spacingY = 40;
+
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    let sprite, color, points;
+                    if (row === 0) {
+                        sprite = ALIEN_SPRITE_3;
+                        color = COLORS.magenta;
+                        points = 30;
+                    } else if (row < 3) {
+                        sprite = ALIEN_SPRITE_2;
+                        color = COLORS.cyan;
+                        points = 20;
+                    } else {
+                        sprite = ALIEN_SPRITE_1;
+                        color = COLORS.green;
+                        points = 10;
+                    }
+
+                    aliens.push({
+                        x: startX + col * spacingX,
+                        y: startY + row * spacingY,
+                        width: sprite[0].length * PIXEL_SIZE,
+                        height: sprite.length * PIXEL_SIZE,
+                        sprite: sprite,
+                        color: color,
+                        points: points,
+                        alive: true,
+                        frame: 0
+                    });
+                }
+            }
+        }
+
+        // Dibujar jugador
+        function drawPlayer() {
+            drawSprite(PLAYER_SPRITE, player.x, player.y, COLORS.green);
+
+            // Efecto de brillo
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = COLORS.green;
+        }
+
+        // Dibujar aliens
+        function drawAliens() {
+            aliens.forEach(alien => {
+                if (alien.alive) {
+                    drawSprite(alien.sprite, alien.x, alien.y, alien.color);
+                }
+            });
+        }
+
+        // Dibujar balas
+        function drawBullets() {
+            ctx.fillStyle = COLORS.yellow;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = COLORS.yellow;
+            bullets.forEach(bullet => {
+                ctx.fillRect(bullet.x, bullet.y, 4, 12);
+            });
+
+            ctx.fillStyle = COLORS.red;
+            ctx.shadowColor = COLORS.red;
+            alienBullets.forEach(bullet => {
+                ctx.fillRect(bullet.x, bullet.y, 4, 12);
+            });
+            ctx.shadowBlur = 0;
+        }
+
+        // Dibujar UI
+        function drawUI() {
+            ctx.fillStyle = COLORS.white;
+            ctx.font = '20px Courier New';
+            ctx.textAlign = 'left';
+            ctx.fillText(`PUNTOS: ${score.toString().padStart(6, '0')}`, 20, 30);
+            ctx.textAlign = 'right';
+            ctx.fillText(`NIVEL: ${level}`, canvas.width - 20, 30);
+
+            // Vidas
+            ctx.textAlign = 'center';
+            ctx.fillText('VIDAS:', canvas.width / 2 - 50, 30);
+            for (let i = 0; i < lives; i++) {
+                drawSprite(PLAYER_SPRITE, canvas.width / 2 + i * 35, 15, COLORS.green, 2);
+            }
+
+            // Linea de defensa
+            ctx.strokeStyle = COLORS.green;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 30);
+            ctx.lineTo(canvas.width, canvas.height - 30);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // Mover jugador
+        function movePlayer() {
+            player.x += player.dx;
+
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) {
+                player.x = canvas.width - player.width;
+            }
+        }
+
+        // Mover balas
+        function moveBullets() {
+            bullets = bullets.filter(bullet => {
+                bullet.y -= 8;
+                return bullet.y > 0;
+            });
+
+            alienBullets = alienBullets.filter(bullet => {
+                bullet.y += 5;
+                return bullet.y < canvas.height;
+            });
+        }
+
+        // Mover aliens
+        function moveAliens() {
+            let shouldDrop = false;
+            let leftMost = canvas.width;
+            let rightMost = 0;
+
+            aliens.forEach(alien => {
+                if (alien.alive) {
+                    if (alien.x < leftMost) leftMost = alien.x;
+                    if (alien.x + alien.width > rightMost) rightMost = alien.x + alien.width;
+                }
+            });
+
+            if (rightMost >= canvas.width - 10 && alienDirection > 0) {
+                shouldDrop = true;
+                alienDirection = -1;
+            } else if (leftMost <= 10 && alienDirection < 0) {
+                shouldDrop = true;
+                alienDirection = 1;
+            }
+
+            aliens.forEach(alien => {
+                if (alien.alive) {
+                    if (shouldDrop) {
+                        alien.y += alienDropAmount;
+                    }
+                    alien.x += alienSpeed * alienDirection;
+
+                    // Game over si llegan abajo
+                    if (alien.y + alien.height >= player.y) {
+                        gameOver = true;
+                    }
+                }
+            });
+        }
+
+        // Disparo de aliens
+        function alienShoot() {
+            const aliveAliens = aliens.filter(a => a.alive);
+            if (aliveAliens.length > 0 && Math.random() < 0.02) {
+                const shooter = aliveAliens[Math.floor(Math.random() * aliveAliens.length)];
+                alienBullets.push({
+                    x: shooter.x + shooter.width / 2,
+                    y: shooter.y + shooter.height
+                });
+            }
+        }
+
+        // Detectar colisiones
+        function checkCollisions() {
+            // Balas del jugador vs aliens
+            bullets.forEach((bullet, bIndex) => {
+                aliens.forEach(alien => {
+                    if (alien.alive &&
+                        bullet.x < alien.x + alien.width &&
+                        bullet.x + 4 > alien.x &&
+                        bullet.y < alien.y + alien.height &&
+                        bullet.y + 12 > alien.y) {
+                        alien.alive = false;
+                        bullets.splice(bIndex, 1);
+                        score += alien.points;
+                        createExplosion(alien.x, alien.y, alien.color);
+                    }
+                });
+            });
+
+            // Balas de aliens vs jugador
+            alienBullets.forEach((bullet, bIndex) => {
+                if (bullet.x < player.x + player.width &&
+                    bullet.x + 4 > player.x &&
+                    bullet.y < player.y + player.height &&
+                    bullet.y + 12 > player.y) {
+                    alienBullets.splice(bIndex, 1);
+                    lives--;
+                    createExplosion(player.x, player.y, COLORS.green);
+                    if (lives <= 0) {
+                        gameOver = true;
+                    }
+                }
+            });
+
+            // Victoria
+            if (aliens.every(a => !a.alive)) {
+                level++;
+                alienSpeed += 0.5;
+                initAliens();
+            }
+        }
+
+        // Particulas de explosion
+        let particles = [];
+
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 30,
+                    color: color
+                });
+            }
+        }
+
+        function updateParticles() {
+            particles = particles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                return p.life > 0;
+            });
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life / 30;
+                ctx.fillRect(p.x, p.y, 4, 4);
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        // Dibujar estrellas de fondo
+        let stars = [];
+        for (let i = 0; i < 100; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2 + 1,
+                speed: Math.random() * 0.5 + 0.2
+            });
+        }
+
+        function drawStars() {
+            ctx.fillStyle = '#ffffff';
+            stars.forEach(star => {
+                ctx.globalAlpha = Math.random() * 0.5 + 0.5;
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+                star.y += star.speed;
+                if (star.y > canvas.height) {
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        // Pantalla de Game Over
+        function drawGameOver() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = COLORS.red;
+            ctx.font = '48px Courier New';
+            ctx.textAlign = 'center';
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = COLORS.red;
+            ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 30);
+
+            ctx.fillStyle = COLORS.white;
+            ctx.font = '24px Courier New';
+            ctx.shadowBlur = 0;
+            ctx.fillText(`PUNTUACION FINAL: ${score}`, canvas.width / 2, canvas.height / 2 + 20);
+            ctx.fillText('Pulsa [R] para reiniciar', canvas.width / 2, canvas.height / 2 + 60);
+        }
+
+        // Controles
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                player.dx = -player.speed;
+            }
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                player.dx = player.speed;
+            }
+            if (e.key === ' ' && !gameOver) {
+                if (bullets.length < 3) {
+                    bullets.push({
+                        x: player.x + player.width / 2 - 2,
+                        y: player.y
+                    });
+                }
+            }
+            if ((e.key === 'r' || e.key === 'R') && gameOver) {
+                resetGame();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                if (player.dx < 0) player.dx = 0;
+            }
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                if (player.dx > 0) player.dx = 0;
+            }
+        });
+
+        // Reiniciar juego
+        function resetGame() {
+            score = 0;
+            lives = 3;
+            level = 1;
+            alienSpeed = 1;
+            gameOver = false;
+            player.x = canvas.width / 2 - 20;
+            bullets = [];
+            alienBullets = [];
+            particles = [];
+            initAliens();
+        }
+
+        // Loop principal
+        function gameLoop() {
+            // Limpiar canvas
+            ctx.fillStyle = '#000011';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar fondo
+            drawStars();
+
+            if (!gameOver) {
+                // Actualizar
+                movePlayer();
+                moveBullets();
+                moveAliens();
+                alienShoot();
+                checkCollisions();
+                updateParticles();
+
+                // Dibujar
+                drawAliens();
+                drawPlayer();
+                drawBullets();
+                drawParticles();
+            } else {
+                drawAliens();
+                drawPlayer();
+                drawGameOver();
+            }
+
+            drawUI();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Iniciar juego
+        initAliens();
+        gameLoop();
+    </script>
+</body>
+</html>
