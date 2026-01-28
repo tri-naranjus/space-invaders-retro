@@ -1,0 +1,140 @@
+================================================================
+     THE LIGHTHOUSE OF FORGOTTEN SOULS - WALKTHROUGH
+================================================================
+
+This walkthrough will guide you through the game if you get stuck.
+Try to solve puzzles yourself first for the best experience!
+
+================================================================
+                        QUICK HINTS
+================================================================
+
+1. Examine EVERYTHING - look at items, examine the scenery
+2. The ghost on the path has important information
+3. Dig in the sand at the beach near the waterline
+4. The crab loves food
+5. You need: a lens, a mirror, oil, matches, and a key
+
+================================================================
+                     FULL WALKTHROUGH
+================================================================
+
+BEACH (Starting Location)
+-------------------------
+- Type: LOOK SAND (notice something glinting)
+- Type: DIG (or GET MIRROR) to find the MIRROR SHARD
+- Type: GET ROPE
+- Type: GET DRIFTWOOD
+- Type: GO NORTH to reach the path
+
+PATH
+----
+- Type: TALK GHOST to hear her plea
+- Type: GO EAST to reach the garden
+
+GARDEN
+------
+- Type: GET APPLE
+- Type: GET MATCHES
+- Type: GO NORTH to enter the shed
+
+SHED
+----
+- Type: GET OIL CAN
+- Type: GET SMALL KEY
+- Type: GO SOUTH twice to return to path
+
+PATH
+----
+- Type: GO SOUTH to return to beach
+
+BEACH
+-----
+- Type: GO EAST to reach the cliffs
+
+CLIFFS
+------
+- Type: USE APPLE (or THROW APPLE AT CRAB)
+  The crab chases the apple, clearing the path!
+- Type: GO NORTH to enter the cave
+
+CAVE
+----
+- Type: GET CRYSTAL LENS
+- Type: GET ANCIENT COIN (optional, for backstory)
+- Type: LOOK CARVINGS (for the hint)
+- Type: GO SOUTH twice to return to beach
+- Type: GO NORTH to path
+
+PATH (with coin)
+----------------
+- Type: GIVE COIN TO GHOST (or USE COIN)
+  She gives you crucial hints about what to do!
+- Type: GO NORTH to lighthouse exterior
+
+LIGHTHOUSE EXTERIOR
+-------------------
+- Type: USE KEY (or USE KEY ON DOOR)
+  The door opens!
+- Type: GO NORTH to enter
+
+LIGHTHOUSE INTERIOR
+-------------------
+- Type: GET LANTERN
+- Type: GET JOURNAL (optional, for story)
+- Type: READ JOURNAL (learn about Thomas and Eliza)
+- Type: USE OIL ON LANTERN (fills it with oil)
+- Type: USE MATCHES (or LIGHT LANTERN)
+  Now you have a lit lantern!
+- Type: GO UP to climb the stairs
+
+LIGHTHOUSE STAIRS
+-----------------
+- Type: GO UP to reach the light chamber
+
+LIGHT CHAMBER (Final Puzzle)
+----------------------------
+- Type: USE CRYSTAL LENS (or PLACE LENS)
+  The lens is installed in the housing!
+- Type: USE MIRROR SHARD (or PLACE MIRROR)
+  The mirror completes the reflector array!
+- Type: USE LANTERN
+
+*** THE LIGHTHOUSE BLAZES TO LIFE! ***
+*** YOU WIN! ***
+
+================================================================
+                       THE STORY
+================================================================
+
+Thomas Blackwood was the lighthouse keeper who loved his wife
+Eliza. When a terrible storm took her life at sea, Thomas vowed
+to keep the light burning forever, waiting for her spirit to
+return. He kept his vigil for years until he too passed on.
+
+Without a keeper, the light went dark. Countless ships were
+lost, their souls trapped in the eternal mist around the island.
+
+By restoring the light, you reunite Thomas and Eliza's spirits
+and free all the lost souls - including finding your own way
+home.
+
+================================================================
+                     COMMANDS REFERENCE
+================================================================
+
+LOOK / L - Look around the room
+LOOK <object> - Examine something closely
+GET <item> - Pick up an item
+USE <item> - Use an item
+USE <item> ON <object> - Use item on something
+TALK - Talk to characters
+GO NORTH/SOUTH/EAST/WEST (or N/S/E/W) - Move around
+GO UP/DOWN (or U/D) - Climb stairs
+INVENTORY / I - See what you're carrying
+HELP - Show command list
+QUIT - Exit the game
+
+================================================================
+     Thank you for playing THE LIGHTHOUSE OF FORGOTTEN SOULS!
+================================================================
